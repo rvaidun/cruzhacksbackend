@@ -154,6 +154,25 @@ app.get("/read", async (req, res) => {
   return res.status(200).json(emailq.data());
 });
 
+app.put("/update", async (req, res) => {
+  const applicantref = db.collection("applicants");
+  let email;
+  let properties;
+  if (req.body.email == null) {
+    return res.status(404).json({ message: "Please specify email" });
+  }
+  if (req.body.properties == null) {
+    return res.status(404).json({ message: "Please specify what to update" });
+  }
+  try {
+    const t = await applicantref
+      .doc(req.body.email)
+      .update(req.body.properties);
+  } catch (e) {
+    return res.status(404).json({ message: e });
+  }
+  return res.status(200).json({ message: "Succesfully updated" });
+});
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server");
 });
