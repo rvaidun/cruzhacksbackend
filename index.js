@@ -121,13 +121,13 @@ app.post("/create", async (req, res) => {
     return res.send(400, { message: "Invalid JSON", error: resp.errors });
   }
   const docRef = db.collection("applicants");
-  const newDoc = docRef.doc(req.body.email);
   const email = await docRef.where("email", "==", req.body.email).get();
   if (!email.empty) {
     return res.send(400, {
       message: "Email already exists",
     });
   }
+  const newDoc = docRef.doc(req.body.email);
   newDoc
     .set(req.body)
     .then(() => {
@@ -182,6 +182,42 @@ app.delete("/delete", async (req, res) => {
   }
   return res.status(200).json({ message: "Succesfully deleted" });
 });
+
+app.get("/volunteers", async (req, res) => {
+  const applicantref = db.collection("applicants");
+  const volunteerquery = await applicantref
+    .where("applicationType", "==", "volunteer")
+    .get();
+  var volunteers = [];
+  volunteerquery.forEach((doc) => {
+    volunteers.push(doc.data());
+    console.log(doc.data());
+  });
+  res.status(200).json({ message: volunteers });
+});
+app.get("/hackers", async (req, res) => {
+  const applicantref = db.collection("applicants");
+  const volunteerquery = await applicantref
+    .where("applicationType", "==", "hacker")
+    .get();
+  var volunteers = [];
+  volunteerquery.forEach((doc) => {
+    volunteers.push(doc.data());
+    console.log(doc.data());
+  });
+  res.status(200).json({ message: volunteers });
+});
+app.get("/applicants", async (req, res) => {
+  const applicantref = db.collection("applicants");
+  const volunteerquery = await applicantref.get();
+  var volunteers = [];
+  volunteerquery.forEach((doc) => {
+    volunteers.push(doc.data());
+    console.log(doc.data());
+  });
+  res.status(200).json({ message: volunteers });
+});
+
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server");
 });
