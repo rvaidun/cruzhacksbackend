@@ -1,7 +1,9 @@
 const express = require("express");
 var admin = require("firebase-admin");
 var validate = require("jsonschema").validate;
-
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+dotenv.config();
 var serviceAccount = require("./cruzhacks-c8855-firebase-adminsdk-jqjtf-588cc69708.json");
 var generalSchema = {
   type: "object",
@@ -103,19 +105,34 @@ var generalSchema = {
     },
   ],
 };
+
+var bodyParser = require("body-parser");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://cruzhacks-c8855-default-rtdb.firebaseio.com",
 });
-
-var bodyParser = require("body-parser");
-
 const db = admin.firestore();
 const app = express();
 const port = 3000;
 app.use(bodyParser.json());
 
-app.post("/create", async (req, res) => {
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+    console.log(err);
+
+    if (err) return res.sendStatus(403);
+
+    req.user = user;
+
+    next();
+  });
+}
+app.post("/create", authenticateToken, async (req, res) => {
   const resp = validate(req.body, generalSchema);
   if (!resp.valid) {
     return res.send(400, { message: "Invalid JSON", error: resp.errors });
@@ -141,7 +158,7 @@ app.post("/create", async (req, res) => {
     });
 });
 
-app.get("/read", async (req, res) => {
+app.get("/read", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   let email;
   if (req.body.email == null) {
@@ -154,7 +171,7 @@ app.get("/read", async (req, res) => {
   return res.status(200).json(emailq.data());
 });
 
-app.put("/update", async (req, res) => {
+app.put("/update", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   let email;
   let properties;
@@ -173,7 +190,7 @@ app.put("/update", async (req, res) => {
   }
   return res.status(200).json({ message: "Succesfully updated" });
 });
-app.delete("/delete", async (req, res) => {
+app.delete("/delete", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   try {
     const t = await applicantref.doc(req.body.email).delete();
@@ -183,7 +200,7 @@ app.delete("/delete", async (req, res) => {
   return res.status(200).json({ message: "Succesfully deleted" });
 });
 
-app.get("/volunteers", async (req, res) => {
+app.get("/volunteers", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref
     .where("applicationType", "==", "volunteer")
@@ -195,7 +212,7 @@ app.get("/volunteers", async (req, res) => {
   });
   res.status(200).json({ message: volunteers });
 });
-app.get("/hackers", async (req, res) => {
+app.get("/hackers", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref
     .where("applicationType", "==", "hacker")
@@ -207,7 +224,7 @@ app.get("/hackers", async (req, res) => {
   });
   res.status(200).json({ message: volunteers });
 });
-app.get("/applicants", async (req, res) => {
+app.get("/applicants", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref.get();
   var volunteers = [];
@@ -218,10 +235,14 @@ app.get("/applicants", async (req, res) => {
   res.status(200).json({ message: volunteers });
 });
 
+app.get("/generateaccesstoken", (req, res) => {
+  const token = jwt.sign("admin", process.env.TOKEN_SECRET);
+  res.end(JSON.stringify(token));
+}); // Basic Auth token. In the future can make auth tokens more secure
+
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server");
 });
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
