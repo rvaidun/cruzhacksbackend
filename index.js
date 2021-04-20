@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
 var serviceAccount = require("./cruzhacks-c8855-firebase-adminsdk-jqjtf-588cc69708.json");
+// General schema used for creating new documents in database
 var generalSchema = {
   type: "object",
   properties: {
@@ -116,6 +117,7 @@ const app = express();
 const port = 3000;
 app.use(bodyParser.json());
 
+// Middleware for authentication ctoken
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -132,6 +134,8 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+// Route to create new user
 app.post("/create", authenticateToken, async (req, res) => {
   const resp = validate(req.body, generalSchema);
   if (!resp.valid) {
@@ -158,6 +162,7 @@ app.post("/create", authenticateToken, async (req, res) => {
     });
 });
 
+// Route to get data from 1 user
 app.get("/read", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   let email;
@@ -171,6 +176,7 @@ app.get("/read", authenticateToken, async (req, res) => {
   return res.status(200).json(emailq.data());
 });
 
+// Route to update information for any user
 app.put("/update", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   let email;
@@ -190,6 +196,8 @@ app.put("/update", authenticateToken, async (req, res) => {
   }
   return res.status(200).json({ message: "Succesfully updated" });
 });
+
+// Route to delete information for any user
 app.delete("/delete", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   try {
@@ -200,6 +208,7 @@ app.delete("/delete", authenticateToken, async (req, res) => {
   return res.status(200).json({ message: "Succesfully deleted" });
 });
 
+// Route to get all volunteers
 app.get("/volunteers", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref
@@ -212,6 +221,8 @@ app.get("/volunteers", authenticateToken, async (req, res) => {
   });
   res.status(200).json({ message: volunteers });
 });
+
+// Route to get all hackers
 app.get("/hackers", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref
@@ -224,6 +235,8 @@ app.get("/hackers", authenticateToken, async (req, res) => {
   });
   res.status(200).json({ message: volunteers });
 });
+
+// Route to get all volunteers
 app.get("/applicants", authenticateToken, async (req, res) => {
   const applicantref = db.collection("applicants");
   const volunteerquery = await applicantref.get();
@@ -235,6 +248,7 @@ app.get("/applicants", authenticateToken, async (req, res) => {
   res.status(200).json({ message: volunteers });
 });
 
+// Route to generate access tokens
 app.get("/generateaccesstoken", (req, res) => {
   const token = jwt.sign("admin", process.env.TOKEN_SECRET);
   res.end(JSON.stringify(token));
@@ -243,6 +257,7 @@ app.get("/generateaccesstoken", (req, res) => {
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server");
 });
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
