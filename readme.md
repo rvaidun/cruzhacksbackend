@@ -39,11 +39,14 @@ This route is to get a specific users information. Pass the email in the JSON bo
 
 ### update
 
-This route is to update a specifc users information. Pass the email in the JSON body
+This route is to update a specifc users information. Pass the email in the JSON body. Also pass the information that needs to be updated in properties.
 
 ```json
 {
-  "email": "johndoe@ucsc.edu"
+  "email": "johndoe@ucsc.edu",
+  "properties": {
+    "age": 15
+  }
 }
 ```
 
