@@ -1,4 +1,4 @@
-# Project Title
+# CruzHacks Backend Challege
 
 Backend server for CruzHacks
 
